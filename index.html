@@ -34,6 +34,7 @@ button:disabled{opacity:.4;cursor:default}
 #toast.on{opacity:1;transform:translate(-50%,0)}
 #load{position:fixed;inset:0;display:grid;place-items:center;background:var(--bg);color:#e8c674;font:24px "ZCOOL QingKe HuangYou",serif;transition:opacity .6s;text-align:center;padding:20px}
 @media(max-width:600px){.hud{top:8px;left:8px;width:calc(100% - 16px);padding:10px 14px 12px}h1{font-size:24px}#story,#task{font-size:13px}button{padding:0 13px;font-size:15px}#pg{display:none}}
+@media(max-height:720px){#story{display:none}.hud{padding:10px 14px 12px}h1{font-size:24px;margin-bottom:2px}#task{font-size:13px}}
 @media(prefers-reduced-motion:reduce){#toast,#load{transition:none}}
 </style>
 </head>
@@ -257,7 +258,7 @@ async function main(){
   const stacks=[1,-1].map(s=>{const m=new THREE.Mesh(new THREE.BoxGeometry(W*.99,1,H*.99),stackMat);m.position.x=s*W/2;m.castShadow=m.receiveShadow=true;scene.add(m);return m});
   // 立体零件
   const spreads=SPREADS.map(()=>[]),heroes=[],gears=[],towers=[],wob=[],flick=[];
-  const handMat=new THREE.MeshStandardMaterial({color:0x2a1a0d,metalness:.6,roughness:.4,envMap:window.__ENV}),stickMat=new THREE.MeshLambertMaterial({color:0x9b7448});
+  const handMat=new THREE.MeshStandardMaterial({color:0x2a1a0d,metalness:.6,roughness:.4,envMap:window.__ENV||null}),stickMat=new THREE.MeshLambertMaterial({color:0x9b7448});
   const brushed=(()=>{const[c,g]=cvs(256,256),r=rng(4);g.fillStyle='#8a8a8a';g.fillRect(0,0,256,256);for(let i=0;i<1400;i++){const v=110+r()*90|0;g.fillStyle=`rgb(${v},${v},${v})`;g.fillRect(r()*256,r()*256,20+r()*90,1)}const t=new THREE.CanvasTexture(c);return t})();
   SPREADS.forEach((list,k)=>list.forEach((def,di)=>{
     const[kind,x,z,w,h0,o={}]=def,isG=kind==='gear',fname=kind==='hero'?'hero_stand':pick(FILES[k][di]),img=IMG[fname];
@@ -266,7 +267,7 @@ async function main(){
     if(img){const r=fromImg(img);c=r[0];if(kind==='banner'){const g=r[1];g.fillStyle='#fbe9c8';g.font=`${Math.round(c.height*.13)}px ${TF}`;g.textAlign='center';g.textBaseline='middle';g.shadowColor='rgba(40,15,5,.6)';g.shadowBlur=6;g.fillText(o.t,c.width/2,c.height*(o.ty||.34))}}
     else{const pre=kind==='hero'?HERO.stand:SVGC[k+'_'+di];if(pre)c=pre;else{const res=(kind==='hero'||isG)?640:400,cw=Math.round(w*res),chh=Math.round((isG?w:h)*res),r=cvs(cw,chh);P[kind](r[1],cw,chh,o);c=r[0]}if(kind==='banner'){const g=c.getContext('2d');g.fillStyle='#fbe9c8';g.font=`${Math.round(c.height*.13)}px ${TF}`;g.textAlign='center';g.textBaseline='middle';g.shadowColor='rgba(40,15,5,.7)';g.shadowBlur=6;g.fillText(o.t,c.width/2,c.height*.325)}}
     const t=tex(c),fl=kind==='flame';
-    const mat=new THREE.MeshStandardMaterial({map:t,side:THREE.DoubleSide,alphaTest:isG?.02:.5,transparent:isG,metalness:fl?0:.55,roughness:fl?.8:1,roughnessMap:fl?null:brushed,envMap:window.__ENV,envMapIntensity:1.0});
+    const mat=new THREE.MeshStandardMaterial({map:t,side:THREE.DoubleSide,alphaTest:isG?.02:.5,transparent:isG,metalness:fl?0:.55,roughness:fl?.8:1,roughnessMap:fl?null:brushed,envMap:window.__ENV||null,envMapIntensity:1.0});
     if(fl||isG){mat.emissive=new THREE.Color(0xffffff);mat.emissiveMap=t;mat.emissiveIntensity=fl?.75:.35}
     const geo=new THREE.PlaneGeometry(w,isG?w:h);if(!isG)geo.translate(0,h/2,0);
     const mesh=new THREE.Mesh(geo,mat);mesh.castShadow=true;mesh.receiveShadow=!isG;mesh.customDepthMaterial=new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking,map:t,alphaTest:.5});
@@ -316,7 +317,7 @@ async function main(){
   cv.addEventListener('pointerup',endDrag);cv.addEventListener('pointercancel',endDrag);
   // 镜头
   const camDir=new THREE.Vector3(0,.86,.52).normalize();let camD=4;
-  function fit(){const a=innerWidth/Math.max(1,innerHeight);cam.aspect=a;const tv=Math.tan(cam.fov*PI/360);camD=Math.max(1.0/tv,1.2/(tv*a));cam.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight,false)}
+  function fit(){const a=innerWidth/Math.max(1,innerHeight);cam.aspect=a;const tv=Math.tan(cam.fov*PI/360);camD=Math.max(1.0/tv,1.42/(tv*a));cam.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight,false)}
   addEventListener('resize',fit);fit();updateUI();
   let last=performance.now();
   function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;const t=now/1000;tNow=t;
