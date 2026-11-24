@@ -242,7 +242,7 @@ const SPREADS=[
 const CLOCK={"s0_tower": [0.4987, 0.4006, 0.2026], "ch1_tower": [0.5013, 0.4072, 0.2167], "ch2_tower": [0.5004, 0.4111, 0.1841], "ch3_tower": [0.5083, 0.4, 0.2158], "ch4_tower": [0.5022, 0.4122, 0.2037], "ch5_bigtower": [0.4956, 0.3122, 0.2144], "end_tower_a": [0.5, 0.4106, 0.1979], "end_tower_b": [0.4986, 0.3994, 0.2222], "end_tower_c": [0.5, 0.4122, 0.1903]};
 const EXTRA=['hero_stand','hero_walk','hero_cheer','gear','cover_front','cover_back','page_paper','table_wood'];
 const IMG={};
-const loadImg=n=>new Promise(r=>{const i=new Image();i.onload=()=>{IMG[n]=i;r()};i.onerror=()=>r();i.src='assets/'+n+'.webp'});
+let LOADED=0,LTOTAL=0;const loadImg=n=>new Promise(r=>{const i=new Image(),done=()=>{LOADED++;const l=document.getElementById('load');if(l)l.textContent=`正在折纸… ${LOADED}/${LTOTAL}`;r()};i.crossOrigin='anonymous';i.onload=()=>{IMG[n]=i;done()};i.onerror=done;i.src='assets/'+n+'.webp'});
 function fromImg(img,max=1024){const k=Math.min(1,max/Math.max(img.width,img.height)),[c,g]=cvs(Math.round(img.width*k),Math.round(img.height*k));g.drawImage(img,0,0,c.width,c.height);return[c,g]}
 
 /* ---------- 声音 ---------- */
@@ -254,7 +254,7 @@ async function main(){
   if(!window.THREE){$('#load').textContent='3D 组件没能加载，刷新页面再试一次。';return}
   await new Promise(r=>{const l=$('#gf');if(l.sheet)r();else{l.onload=r;l.onerror=r;setTimeout(r,2500)}});
   try{await Promise.race([Promise.all([document.fonts.load(`40px "ZCOOL QingKe HuangYou"`,ALL),document.fonts.load(`27px "Noto Serif SC"`,ALL)]),new Promise(r=>setTimeout(r,3500))])}catch(e){}
-  const SVGC={},HERO={},COVERC={},names=new Set(EXTRA);SPREADS.flat().forEach(d=>d[5]&&d[5].f&&names.add(d[5].f));await Promise.all([...names].map(loadImg));
+  const SVGC={},HERO={},COVERC={},names=new Set(EXTRA);SPREADS.flat().forEach(d=>d[5]&&d[5].f&&names.add(d[5].f));LTOTAL=names.size;await Promise.all([...names].map(loadImg));
   await Promise.all([...SPREADS.flatMap((list,k)=>list.map(async(def,di)=>{const[kind,,,w,h,o={}]=def;if(kind==='hero'||(o.f&&IMG[o.f])||(kind==='gear'&&IMG.gear))return;const hh=kind==='gear'?w:h,sc=Math.min(640,1024/Math.max(w,hh)),cw=Math.round(w*sc),ch=Math.round(hh*sc);SVGC[k+'_'+di]=PS[kind]?await rasterPaper(PS[kind](w*1000,hh*1000,o),w*1000,hh*1000,cw,ch):await rasterSVG(SV[kind](w*1000,hh*1000,o),w*1000,hh*1000,cw,ch)})),
     ...['stand','walk','cheer'].map(async p=>{HERO[p]=await rasterSVG(heroSVG(p),200,320,400,640)}),
     ...[0,1].map(async b=>{COVERC[b]=await rasterSVG(coverSVG(b),PW,PH,PW,PH)})]);
@@ -276,7 +276,7 @@ async function main(){
   if(!css){const pm=new THREE.PMREMGenerator(renderer),[ec,eg]=cvs(512,256),lg=eg.createLinearGradient(0,0,0,256);lg.addColorStop(0,'#fff2d6');lg.addColorStop(.42,'#c99a5e');lg.addColorStop(.55,'#4a2f1c');lg.addColorStop(1,'#140c07');eg.fillStyle=lg;eg.fillRect(0,0,512,256);eg.fillStyle='#fff6e2';eg.fillRect(70,40,80,46);eg.fillRect(320,28,130,36);eg.fillStyle='#ffd9a0';eg.fillRect(200,90,60,20);const et=new THREE.CanvasTexture(ec);et.mapping=THREE.EquirectangularReflectionMapping;et.encoding=THREE.sRGBEncoding;window.__ENV=pm.fromEquirectangular(et).texture;pm.dispose()}
   const sun=new THREE.DirectionalLight(0xffe2b8,.8);sun.position.set(-1.4,3.4,1.6);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-1.8,right:1.8,top:1.8,bottom:-1.8,near:.5,far:9});sun.shadow.bias=-.0008;sun.shadow.normalBias=.01;scene.add(sun,sun.target);
   // 格子桌布
-  {let c;if(IMG.table_wood)c=fromImg(IMG.table_wood,1024)[0];else{const r=rng(8),q=cvs(512,512),g=q[1];c=q[0];g.fillStyle='#4a2c18';g.fillRect(0,0,512,512);for(let i=0;i<220;i++){g.strokeStyle=`rgba(${20+r()*30|0},${10+r()*15|0},5,${.15+r()*.3})`;g.lineWidth=1+r()*3;g.beginPath();const y=r()*512;g.moveTo(0,y);for(let x=0;x<=512;x+=32)g.lineTo(x,y+Math.sin(x/60+i)*4*r());g.stroke()}}if(css)cv.style.background=`#22150c url(${c.toDataURL()}) 0 0/420px`;const t=tex(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(IMG.table_wood?5:6,IMG.table_wood?5:6);const m=new THREE.Mesh(new THREE.PlaneGeometry(14,14),new THREE.MeshStandardMaterial({map:t,roughness:.62,metalness:0}));m.rotation.x=-PI/2;m.position.y=-.002;m.receiveShadow=true;scene.add(m)}
+  {let c;if(IMG.table_wood)c=fromImg(IMG.table_wood,1024)[0];else{const r=rng(8),q=cvs(512,512),g=q[1];c=q[0];g.fillStyle='#4a2c18';g.fillRect(0,0,512,512);for(let i=0;i<220;i++){g.strokeStyle=`rgba(${20+r()*30|0},${10+r()*15|0},5,${.15+r()*.3})`;g.lineWidth=1+r()*3;g.beginPath();const y=r()*512;g.moveTo(0,y);for(let x=0;x<=512;x+=32)g.lineTo(x,y+Math.sin(x/60+i)*4*r());g.stroke()}}if(css)cv.style.background=`#22150c url(${IMG.table_wood?IMG.table_wood.src:c.toDataURL()}) 0 0/420px`;const t=tex(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(IMG.table_wood?5:6,IMG.table_wood?5:6);const m=new THREE.Mesh(new THREE.PlaneGeometry(14,14),new THREE.MeshStandardMaterial({map:t,roughness:.62,metalness:0}));m.rotation.x=-PI/2;m.position.y=-.002;m.receiveShadow=true;scene.add(m)}
   // 书页贴图
   const PT={};
   function redraw(key){const p=PT[key];if(!p)return;const g=p.g;g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,PW,PH);if(p.back){if(css)g.setTransform(-1,0,0,-1,PW,PH);else g.setTransform(-1,0,0,1,PW,0)}g.save();PAGES[key](g);g.restore();p.t.needsUpdate=true}
